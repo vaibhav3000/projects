@@ -1,93 +1,59 @@
 # Scalable Sequence Modeling with State Space Models
 
-**Institution:** Indian Institute of Science (IISc), Bangalore  
-**Date:** April 2025
-
 ## Overview
+This project benchmarks and analyzes modern State Space Models (SSMs), specifically focusing on the evolution from Linear State Space Layers (LSSL) to Structured State Spaces (S4) and the selective Mamba architecture. The goal is to explore models that retain the parallel training capabilities of Transformers and the linear-time inference of RNNs while effectively modeling long-range dependencies.
 
-This project explores the evolution and application of State Space Models (SSMs) for efficient sequential data modeling. We benchmark modern SSM architectures, specifically Structured State Space (S4) and Mamba, against traditional Transformers and RNNs.
+## Key Concepts
 
-The primary research objective is to identify models that support parallel training (linear complexity) and constant-time inference without sacrificing the ability to model long-range dependencies. The project moves from the theoretical foundations of Linear State Space Layers (LSSL) and HiPPO matrices to practical implementations using S4 and Mamba.
+### State Space Models (SSMs)
+The project implements and analyzes the mathematical framework of SSMs, which describe dynamical systems via a hidden state that evolves over time. This involves mapping a 1-dimensional input sequence to an output through an implicit latent state.
 
-## Theoretical Framework
+### Evolution of Architectures
+The project covers the theoretical progression of sequence modeling:
+* **LSSL (Linear State Space Layers):** Implementing SSMs via simulating linear continuous-time state space representations.
+* **HiPPO (High-Order Polynomial Projection Operators):** A framework for online function approximation that projects continuous input history onto polynomial basis functions (Legendre, Laguerre) to compress memory.
+* **S4 (Structured State Space):** Utilizes Normal Plus Low-Rank (NPLR) decomposition and Fast Fourier Transforms (FFT) to compute convolutions efficiently in O(L log L) time.
+* **Mamba (Selective SSMs):** Introduces a selection mechanism where parameters (Delta, B, C) are input-dependent, allowing the model to selectively remember or ignore information based on content.
 
-The project covers four distinct stages of SSM development:
+## Experiments
 
-1.  **Linear State Space Layer (LSSL):**
-    * Maps a 1-D function sequence via an implicit latent state.
-    * Utilizes the Generalized Bilinear Transform (GBT) for discretizing continuous-time systems.
+The project evaluates these architectures on specific tasks designed to test long-range dependency handling and content-aware reasoning.
 
-2.  **HiPPO (High-Order Polynomial Projection Operators):**
-    * Addresses memory compression by projecting input history onto polynomial basis functions (Legendre, Laguerre).
-    * Ensures online function approximation remains efficient.
+### 1. Selective Copying Task
+This task requires the model to memorize relevant tokens (markers) while filtering out noise, requiring content-aware reasoning.
+* **Dataset:** Vocabulary size of 30, sequence length 64 (training) to 128 (testing).
+* **Training:** 10,000 samples.
+* **Result:** The model achieved approximately 96.31% accuracy at around 30 epochs with ~1 million parameters.
 
-3.  **S4 (Structured State Space for Sequence Modeling):**
-    * Solves the computational bottleneck of LSSL using Normal Plus Low-Rank (NPLR) decomposition.
-    * Utilizes FFT-based convolution for $O(L \log L)$ training complexity.
+### 2. IMDb Sentiment Analysis
+A benchmark for classifying 50,000 movie reviews as positive or negative to test performance on real-world long-sequence data.
+* **Comparison:** S4 vs. Mamba.
+* **Results:**
+    * **Mamba:** Achieved 0.96 AUC.
+    * **S4 Baseline:** Achieved 0.94 AUC.
+    * **Efficiency:** Mamba reduced training time by approximately 50% compared to S4.
 
-4.  **Mamba (Selective State Spaces):**
-    * Introduces a **Selection Mechanism** where parameters ($\Delta$, B, C) become input-dependent.
-    * Overcomes the limitations of Linear Time-Invariant (LTI) models by enabling content-aware reasoning (selective copying and context filtering).
-    * Implements hardware-aware state expansion (GPU SRAM vs. HBM) for efficiency.
+## Technical Implementation
 
-## Experiments and Results
+### Discretization
+The project implements Generalized Bilinear Transform (GBT) for discretizing continuous-time systems. This includes implementations of:
+* Forward Euler
+* Backward Euler
+* Trapezoidal methods
 
-We conducted comparative experiments to validate the performance and efficiency of Mamba versus S4 and baseline models.
+### Hardware-Aware Optimization
+For the Mamba implementation, the project leverages hardware-aware algorithms (Kernel Fusion, Parallel Scan, Recomputation) to manage state expansion efficiently within GPU memory hierarchies (SRAM vs. HBM).
 
-### Experiment 1: Selective Copying Task
-This task tests the model's ability to filter noise and selectively memorize relevant tokens, requiring content-aware reasoning.
-
-* **Dataset:** Custom dataset with vocabulary size 30; sequences contain randomized markers.
-* **Comparison:**
-    * **LTI Models (S4/Convolutional):** Struggle with this task as they apply a fixed kernel across the sequence.
-    * **Mamba:** Successfully differentiates between relevant and irrelevant tokens due to its input-dependent selection mechanism.
-* **Result:** Mamba (~1 million parameters) achieved **96.31% accuracy** on test sequences of length 128.
-
-### Experiment 2: IMDb Sentiment Analysis
-A binary classification task on 50,000 movie reviews to evaluate long-sequence modeling capabilities.
-
-* **Performance Metrics:**
-    * **S4 Model:** AUC of **0.94**.
-    * **Mamba Model:** AUC of **0.96**.
-* **Computational Efficiency:**
-    * Mamba demonstrated a training time reduction of approximately **50%** compared to S4 (approx. 160 seconds vs. 330 seconds for equivalent epochs).
-    * Mamba showed faster convergence during training.
-
-## Tech Stack
-
-* **Language:** Python
-* **Frameworks:** PyTorch
-* **Libraries:** NumPy, Scikit-learn, Hugging Face (Datasets)
-* **Key Concepts:** FFT (Fast Fourier Transform), NPLR Decomposition, Discretization (GBT)
-
-## Usage
-
-To replicate the experiments:
-
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/vaibhav3000/SSM-Project.git](https://github.com/vaibhav3000/SSM-Project.git)
-    cd SSM-Project
-    ```
-
-2.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-3.  **Run S4 Benchmarks:**
-    ```bash
-    python train.py --model s4 --dataset imdb
-    ```
-
-4.  **Run Mamba Benchmarks:**
-    ```bash
-    python train.py --model mamba --dataset imdb
-    ```
+## Requirements
+* Python
+* PyTorch
+* NumPy
+* Scikit-learn
+* Hugging Face Transformers (for baseline comparisons)
 
 ## References
-
-1.  Gu, A., et al. (2023). Combining Recurrent, Convolutional, and Continuous-time Models with Linear State-Space Layers. NeurIPS.
-2.  Gu, A., Dao, T., et al. (2023). HiPPO: Recurrent Memory with Optimal Polynomial Projections. ICML.
-3.  Gu, A., Goel, K., & Re, C. (2023). Efficiently Modeling Long Sequences with Structured State Spaces. NeurIPS.
-4.  Gu, A., & Dao, T. (2023). Mamba: Linear-Time Sequence Modeling with Selective State Spaces. NeurIPS.
+This project is based on the foundational work in the following papers:
+1.  Combining Recurrent, Convolutional, and Continuous-time Models with Linear State-Space Layers (NeurIPS 2021).
+2.  HiPPO: Recurrent Memory with Optimal Polynomial Projections (ICML 2020).
+3.  Efficiently Modeling Long Sequences with Structured State Spaces (NeurIPS 2021).
+4.  Mamba: Linear-Time Sequence Modeling with Selective State Spaces (NeurIPS 2023).
