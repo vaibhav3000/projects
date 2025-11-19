@@ -1,6 +1,5 @@
 # Scalable Sequence Modeling with State Space Models
 
-**Authors:** Vinay, Subhadeep Sing, Vaibhav Mahore, Snehal Biswas  
 **Institution:** Indian Institute of Science (IISc), Bangalore  
 **Date:** April 2025
 
